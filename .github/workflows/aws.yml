@@ -6,23 +6,27 @@ on:
     - master
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up Ruby
+    - name: Checkout Repo
+      uses: actions/checkout@master
+      with:
+        ref: master
+    - name: Set up Ruby 2.6
       uses: actions/setup-ruby@v1
       with:
-        ruby-version: 2.6
-    - name: Restore Bundler cache
-      id: cache
-      uses: actions/cache@v1
+        ruby-version: 2.6.3
+    - name: Install SSH key
+      uses: webfactory/ssh-agent@v0.1.1
       with:
-        path: vendor/bundle
-        key: ${{ runner.os }}-bundle-${{ hashFiles('**/Gemfile.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-bundle-
-    - uses: miloserdow/capistrano-deploy@v2.1
-      with:
-        target: production
-        deploy_key: ${{ secrets.SECRET_KEY }}
+        ssh-private-key: ${{ secrets.SECRET_KEY }} # 1.で設定したsecretsを呼び出して鍵配置
+    - name: Install Libmysqlclient-dev
+      run: |
+        sudo apt-get install libmysqlclient-dev
+    - name: Bundle install
+      run: |
+        bundle install
+    - name: Deploy Production
+      run: |
+        bundle exec cap production deploy
