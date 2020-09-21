@@ -1,21 +1,28 @@
-name: Deploy to EC2
-# masterにpushされた時にjobを実行する
+name: Deploy with Capistrano
+
 on:
   push:
-    branches: [ master ]
+    branches:
+    - master
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-    - name: github-action-deploy
-      uses: actions/checkout@v1
-    # 保存したシークレットたちを環境変数に設定
-    env:
-      SECRET_KEY: ${{ secrets.SECRET_KEY }}
-      EC2_USER: ${{ secrets.EC2_USER }}
-      EC2_HOST: ${{ secrets.EC2_HOST }}
-      run:
-        echo "$SECRET_KEY" > secret_key
-        chmod 600 secret_key
-        ssh -oStrictHostKeyChecking=no ${EC2_USER}@${EC2_HOST} -i secret_key "cd ~/github-action-deploy && git pull origin master"
+    - uses: actions/checkout@v1
+    - name: Set up Ruby
+      uses: actions/setup-ruby@v1
+      with:
+        ruby-version: 2.5.7
+    - name: Restore Bundler cache
+      id: cache
+      uses: actions/cache@v1
+      with:
+        path: vendor/bundle
+        key: ${{ runner.os }}-bundle-${{ hashFiles('**/Gemfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-bundle-
+    - uses: miloserdow/capistrano-deploy@v2.1
+      with:
+        target: production
+        deploy_key: ${{ secrets.SECRET_KEY }}
