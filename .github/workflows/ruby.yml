@@ -32,24 +32,13 @@ jobs:
     - name: Run tests
       run: bundle exec rails
 
-  deploy:
-    if: github.ref == 'refs/heads/master'
-    needs: [test]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup YARN and NodeJS
-        run: |
-          curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-          echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
-          curl -sL https://deb.nodesource.com/setup_13.x | bash -
-          apt-get install -y yarn nodejs
-      - name: Deploy
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-          USER_NAME: ${{ secrets.USER_NAME }}
-          HOST_NAME: ${{ secrets.HOST_NAME }}
-        run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOST_NAME} 'cd github-action-deploy && git pull origin master && kill $(cat tmp/pids/puma.pid) && rails s -e production'
+    - name: Deploy
+      env:
+        PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        USER_NAME: ${{ secrets.USER_NAME }}
+        HOST_NAME: ${{ secrets.HOST_NAME }}
+      run: |
+        echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+        ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOST_NAME} 'cd github-action-deploy && git pull origin master && kill $(cat tmp/pids/puma.pid)'
+        bundle exec rails s -e production
 
