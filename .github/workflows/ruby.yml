@@ -31,25 +31,13 @@ jobs:
       run: bundle install
     - name: Run tests
       run: bundle exec rails
-    - name: Set up rails
-      run: |
-        sudo yum -y install patch libyaml-devel zlib zlib-devel libffi-devel make autoconf automake libcurl-devel sqlite-devel mysql-devel
-        curl --silent --location https://rpm.nodesource.com/setup_12.x | sudo bash -
-        sudo yum install -y nodejs
-        gem install rails -v 5.2.3
 
-  deploy:
-    if: github.ref == 'refs/heads/master'
-    needs: [test]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Deploy
-        env:
-          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
-          USER_NAME: ${{ secrets.USER_NAME }}
-          HOST_NAME: ${{ secrets.HOST_NAME }}
-        run: |
-          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
-          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOST_NAME} 'cd github-action-deploy && git pull origin master && kill $(cat tmp/pids/puma.pid) && rails s -e production'
+    - name: Deploy
+      env:
+        PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        USER_NAME: ${{ secrets.USER_NAME }}
+        HOST_NAME: ${{ secrets.HOST_NAME }}
+      run: |
+        echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+        ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOST_NAME} 'cd github-action-deploy && git pull origin master && kill $(cat tmp/pids/puma.pid) && rails s -e production'
 
